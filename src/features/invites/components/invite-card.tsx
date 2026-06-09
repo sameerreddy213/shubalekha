@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Globe, PenLine, Copy, Archive, Trash2, Eye } from "lucide-react";
+import { MoreHorizontal, Globe, PenLine, Copy, Archive, Trash2, Eye, BarChart2 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -135,7 +135,12 @@ export function InviteCard({
                 <MoreHorizontal className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem asChild>
+                <a href={`/invites/${id}/analytics`}>
+                  <BarChart2 className="mr-2 h-3.5 w-3.5" /> Analytics
+                </a>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDuplicate}>
                 <Copy className="mr-2 h-3.5 w-3.5" /> Duplicate
               </DropdownMenuItem>

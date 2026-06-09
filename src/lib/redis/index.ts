@@ -78,13 +78,24 @@ export async function isSlugLocked(slug: string): Promise<boolean> {
   return val !== null;
 }
 
-// Simple analytics view buffer key helpers (Phase 11 will expand)
+/**
+ * Record a page view for an invite.
+ * - HyperLogLog key `views:{inviteId}:{day}` for unique visitor estimation
+ * - Raw counter `viewcount:{inviteId}:{day}` for total views
+ * - `analytics:pending` set tracks which inviteId:day pairs need flushing to Mongo
+ */
 export async function bufferView(inviteId: string, visitorHash: string): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
   const day = new Date().toISOString().slice(0, 10);
-  const key = `views:${inviteId}:${day}`;
-  await redis.pfadd(key, visitorHash);
-  await redis.expire(key, 48 * 60 * 60); // 48h TTL on HyperLogLog
-  await redis.incr(`viewcount:${inviteId}:${day}`);
+  const hllKey   = `views:${inviteId}:${day}`;
+  const countKey = `viewcount:${inviteId}:${day}`;
+
+  await Promise.all([
+    redis.pfadd(hllKey, visitorHash),
+    redis.expire(hllKey, 48 * 60 * 60),       // 48 h TTL
+    redis.incr(countKey),
+    redis.expire(countKey, 48 * 60 * 60),
+    redis.sadd("analytics:pending", `${inviteId}:${day}`),
+  ]);
 }
