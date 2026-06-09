@@ -90,16 +90,13 @@ export default async function TemplatesPage() {
 
 function EmptyState() {
   return (
-    <div className="py-20 text-center">
-      <p className="font-display text-xl font-medium text-muted-foreground">
-        Templates are being prepared.
+    <div className="flex flex-col items-center py-24 text-center">
+      <span className="text-4xl">✦</span>
+      <p className="mt-4 font-display text-2xl font-medium">
+        New templates dropping soon.
       </p>
       <p className="mt-2 text-sm text-muted-foreground">
-        Run{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-          npm run seed-templates
-        </code>{" "}
-        to populate the gallery.
+        We&apos;re putting the finishing touches on our collection. Check back shortly.
       </p>
     </div>
   );
