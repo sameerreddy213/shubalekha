@@ -12,7 +12,6 @@ next-env.d.ts
 /build
 
 # env
-.env
 .env.local
 .env*.local
 
