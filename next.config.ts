@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  output: "standalone", // Azure App Service — self-contained Node.js server
   // Mongoose is server-only; keep it out of the client/edge bundle.
   serverExternalPackages: ["mongoose", "@auth/mongodb-adapter", "mongodb"],
   images: {
