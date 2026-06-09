@@ -29,6 +29,27 @@ export async function emailSignInAction(
   return { error: null };
 }
 
+/** Admin email + password sign-in. */
+export async function credentialsSignInAction(
+  _prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const email    = String(formData.get("email")    ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  if (!EMAIL_RE.test(email) || !password) {
+    return { error: "Please enter your email and password." };
+  }
+  try {
+    await signIn("credentials", { email, password, redirectTo: "/admin" });
+  } catch (err: unknown) {
+    const msg = (err as Error)?.message ?? "";
+    // Next-auth throws a redirect error on success — let it propagate
+    if (msg.includes("NEXT_REDIRECT")) throw err;
+    return { error: "Invalid email or password." };
+  }
+  return { error: null };
+}
+
 /** Sign out and return to the marketing home. */
 export async function signOutAction() {
   await signOut({ redirectTo: "/" });

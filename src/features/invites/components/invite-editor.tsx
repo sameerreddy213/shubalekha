@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useTransition, useEffect, useRef } from "react";
+import { useState, useCallback, useTransition, useEffect, useRef, useDeferredValue, memo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Save, Send, ChevronLeft, ChevronRight } from "lucide-react";
@@ -14,6 +14,9 @@ import { Input } from "@/components/ui/input";
 import { FieldEditor } from "./field-editor";
 import { SlugPicker } from "./slug-picker";
 import { InvitePreview } from "./invite-preview";
+
+// Memoised so the preview only re-renders when content actually changes
+const MemoPreview = memo(InvitePreview);
 import { saveInviteAction, publishInviteAction, unpublishInviteAction } from "../actions";
 import type { SectionDef, InviteContent, SectionOverride, SectionType, ThemePalette } from "@/types/invite";
 import { cn } from "@/lib/utils/cn";
@@ -188,6 +191,9 @@ export function InviteEditor({
 
   const activeSectionDef = sections.find((s) => s.key === activeSection);
 
+  // Defer preview updates so fast typing never blocks the input
+  const deferredContent = useDeferredValue(content);
+
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Top bar */}
@@ -329,11 +335,11 @@ export function InviteEditor({
           )}
         </main>
 
-        {/* Live preview panel */}
+        {/* Live preview panel — deferred so typing stays instant */}
         <div className="flex-1 overflow-hidden border-l border-border hidden lg:block">
-          <InvitePreview
+          <MemoPreview
             sections={sections}
-            content={content}
+            content={deferredContent}
             palette={palette}
             templateName={templateName}
           />

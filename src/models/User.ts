@@ -25,6 +25,8 @@ const UserSchema = new Schema(
     lastLoginAt: { type: Date },
     disabledAt: { type: Date, default: null },
     disabledReason: { type: String, maxlength: 300 },
+    /** Hashed password — only set for credential-based admin accounts */
+    passwordHash: { type: String, select: false },
   },
   { timestamps: true },
 );

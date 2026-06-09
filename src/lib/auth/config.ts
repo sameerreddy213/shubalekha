@@ -1,6 +1,8 @@
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import Resend from "next-auth/providers/resend";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import { Types } from "mongoose";
 import { clientPromise } from "@/lib/db/client";
@@ -34,6 +36,42 @@ if (env.AUTH_GOOGLE_ID && env.AUTH_GOOGLE_SECRET) {
     }),
   );
 }
+
+// Credentials provider — admin email+password only
+providers.push(
+  Credentials({
+    name: "credentials",
+    credentials: {
+      email:    { label: "Email",    type: "email"    },
+      password: { label: "Password", type: "password" },
+    },
+    async authorize(credentials) {
+      const email    = (credentials?.email    as string | undefined)?.toLowerCase().trim();
+      const password =  credentials?.password as string | undefined;
+      if (!email || !password) return null;
+
+      await dbConnect();
+      // Select passwordHash explicitly (it has select:false)
+      const user = await User.findOne({ email, role: "admin" })
+        .select("+passwordHash")
+        .lean() as (Record<string, unknown> & { _id: { toString(): string } }) | null;
+
+      if (!user) return null;
+      const hash = user.passwordHash as string | undefined;
+      if (!hash) return null;
+
+      const valid = await bcrypt.compare(password, hash);
+      if (!valid) return null;
+
+      return {
+        id:    user._id.toString(),
+        email: user.email as string,
+        name:  user.name  as string | undefined,
+        role:  "admin",
+      };
+    },
+  }),
+);
 
 if (env.RESEND_API_KEY) {
   providers.push(
