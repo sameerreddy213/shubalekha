@@ -1,29 +1,69 @@
-import Link from "next/link";
+import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
+import type { Metadata } from "next";
+import { getPublishedInviteBySlug } from "@/features/invites/services";
+import { PublicInvitePage } from "@/features/invites/components/public-invite-page";
+import type { InviteDoc, TemplateDoc } from "@/models";
+import type { SectionDef } from "@/types/invite";
+import { inviteUrl } from "@/config/site";
 
-/**
- * Public invitation renderer — placeholder.
- * Reached only via the subdomain rewrite in middleware (slug.<root> → /sites/<slug>).
- * Direct access to /sites/* on the apex domain is blocked by middleware.
- *
- * Phase 8 replaces this with the real ISR-cached, schema-driven invite page
- * (lifecycle states, sections, RSVP, OG, etc.).
- */
-export default async function PublicInvitePage({
-  params,
-}: {
+interface Props {
   params: Promise<{ slug: string }>;
-}) {
+  searchParams: Promise<{ to?: string }>;
+}
+
+// ISR: revalidate on-demand via revalidateTag(`invite:${slug}`)
+const getCachedInvite = unstable_cache(
+  async (slug: string) => getPublishedInviteBySlug(slug),
+  ["invite-page"],
+  { tags: ["invite-page"], revalidate: 60 },
+);
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  const invite = await getCachedInvite(slug);
+  if (!invite) return { title: "Invitation not found" };
+
+  const inv = invite as unknown as InviteDoc & { templateId: TemplateDoc };
+  const seo = inv.seo as { title?: string; description?: string; ogImageUrl?: string } | undefined;
+  const content = inv.content as Record<string, Record<string, string>> | null;
+  const heroContent = content?.hero ?? {};
+
+  const title = seo?.title
+    ?? (heroContent.brideName && heroContent.groomName
+      ? `${heroContent.brideName} & ${heroContent.groomName} — You're Invited!`
+      : `You're Invited!`);
+
+  return {
+    title,
+    description: seo?.description,
+    openGraph: {
+      title,
+      description: seo?.description,
+      images: seo?.ogImageUrl ? [seo.ogImageUrl] : [],
+      url: inviteUrl(slug),
+    },
+  };
+}
+
+export default async function Page({ params, searchParams }: Props) {
+  const { slug } = await params;
+  const { to: guestLinkToken } = await searchParams;
+
+  const invite = await getCachedInvite(slug);
+  if (!invite) notFound();
+
+  const inv = invite as unknown as InviteDoc & {
+    _id: { toString(): string };
+    templateId: TemplateDoc & { sections: SectionDef[] };
+  };
+
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center px-4 text-center">
-      <p className="font-display text-3xl font-semibold text-primary">{slug}</p>
-      <p className="mt-3 max-w-sm text-muted-foreground">
-        This invitation isn&apos;t published yet. The public invitation experience is built in
-        Phase 8.
-      </p>
-      <Link href="/" className="mt-6 text-sm text-primary underline underline-offset-4">
-        Go to Shubalekha
-      </Link>
-    </main>
+    <PublicInvitePage
+      inviteId={inv._id.toString()}
+      invite={inv}
+      template={inv.templateId}
+      guestLinkToken={guestLinkToken}
+    />
   );
 }
