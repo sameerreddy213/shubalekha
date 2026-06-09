@@ -14,9 +14,10 @@ Built with **Next.js 15 (App Router) · TypeScript · MongoDB/Mongoose · Auth.j
 Built phase-by-phase (see [`docs/`](docs/)). **Phases 1–7 complete:**
 
 1. ✅ PRD · 2. ✅ System Architecture · 3. ✅ Database Design · 4. ✅ Folder Structure
-· 5. ✅ API Contracts · 6. ✅ UI/UX Design System · 7. ✅ **Authentication (this scaffold)**
+· 5. ✅ API Contracts · 6. ✅ UI/UX Design System · 7. ✅ Authentication
+· 8. ✅ **Core Features (invite CRUD, RSVP, guest links, public renderer)**
 
-Next: 8. Core Features · 9. Templates · 10. Admin · 11. Analytics · 12. Deployment.
+Next: 9. Templates · 10. Admin · 11. Analytics · 12. Deployment.
 
 ## Getting started
 
