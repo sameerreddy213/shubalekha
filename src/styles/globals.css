@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Shubalekha design tokens — see docs/06-UIUX-Design-System.md.
+ * Semantic HSL variables; Tailwind maps these (tailwind.config.ts).
+ * Product palette: warm neutrals + rosewood/maroon brand + warm gold accent.
+ */
+@layer base {
+  :root {
+    --background: 36 33% 99%;
+    --foreground: 240 10% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 12%;
+
+    --primary: 345 62% 34%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 10% 12%;
+
+    --accent: 38 64% 52%;
+    --accent-foreground: 240 10% 12%;
+
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+
+    --success: 152 45% 38%;
+    --warning: 32 85% 48%;
+    --destructive: 0 65% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 345 62% 34%;
+
+    --radius: 0.75rem;
+
+    /* motion tokens */
+    --motion-fast: 150ms;
+    --motion: 200ms;
+    --motion-slow: 300ms;
+  }
+
+  .dark {
+    --background: 240 10% 8%;
+    --foreground: 36 20% 96%;
+
+    --card: 240 8% 11%;
+    --card-foreground: 36 20% 96%;
+    --popover: 240 8% 11%;
+    --popover-foreground: 36 20% 96%;
+
+    --primary: 345 70% 58%;
+    --primary-foreground: 240 10% 8%;
+
+    --secondary: 240 6% 16%;
+    --secondary-foreground: 36 20% 96%;
+
+    --accent: 38 64% 56%;
+    --accent-foreground: 240 10% 8%;
+
+    --muted: 240 6% 16%;
+    --muted-foreground: 240 5% 64%;
+
+    --success: 152 45% 46%;
+    --warning: 32 85% 56%;
+    --destructive: 0 65% 56%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 20%;
+    --input: 240 6% 20%;
+    --ring: 345 70% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  /* Never render body text below 16px (elder-friendly; no mobile zoom). */
+  ::selection {
+    background: hsl(var(--accent) / 0.25);
+  }
+}
+
+/* Respect reduced motion globally. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
