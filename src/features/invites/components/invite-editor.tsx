@@ -2,7 +2,7 @@
 import { useState, useCallback, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Save, Send, Eye, ChevronLeft, Settings2, ChevronDown, ChevronRight } from "lucide-react";
+import { Save, Send, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
@@ -11,7 +11,6 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FieldEditor } from "./field-editor";
 import { SlugPicker } from "./slug-picker";
 import { saveInviteAction, publishInviteAction, unpublishInviteAction } from "../actions";
@@ -29,7 +28,9 @@ interface InviteEditorProps {
   templateName: string;
 }
 
-const SECTION_LABELS: Partial<Record<SectionType, string>> = {
+// Label shown in the sidebar — prefer the section's own label field,
+// then fall back to a generic map by type, then the raw key.
+const TYPE_LABELS: Partial<Record<SectionType, string>> = {
   hero: "Hero / Title",
   blessings: "Blessings",
   invitationText: "Invitation Text",
@@ -54,6 +55,10 @@ const SECTION_LABELS: Partial<Record<SectionType, string>> = {
   closing: "Closing",
 };
 
+function sectionLabel(s: SectionDef) {
+  return s.label ?? TYPE_LABELS[s.type as SectionType] ?? s.key;
+}
+
 export function InviteEditor({
   inviteId,
   initialContent,
@@ -69,42 +74,44 @@ export function InviteEditor({
   const [content, setContent] = useState<InviteContent>(initialContent);
   const [sectionOverrides, setSectionOverrides] = useState<SectionOverride[]>(initialSectionOverrides);
   const [eventDate, setEventDate] = useState(initialEventDate ?? "");
-  const [activeSection, setActiveSection] = useState<string>(sections[0]?.type ?? "");
+  // activeSection tracks section.key (unique per section, even if type repeats)
+  const [activeSection, setActiveSection] = useState<string>(sections.at(0)?.key ?? "");
   const [publishOpen, setPublishOpen] = useState(false);
   const [slug, setSlug] = useState(initialSlug ?? "");
   const [status, setStatus] = useState(initialStatus);
   const [dirty, setDirty] = useState(false);
   const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Map for quick override lookup
+  // Override map keyed by section.key (not type, since type can repeat)
   const overrideMap = Object.fromEntries(sectionOverrides.map((o) => [o.type, o]));
 
-  function getSectionEnabled(type: string) {
-    const section = sections.find((s) => s.type === type);
-    if (!section) return false;
-    return overrideMap[type]?.enabled ?? section.enabledByDefault;
+  function getSectionEnabled(s: SectionDef) {
+    const override = overrideMap[s.key];
+    if (override !== undefined) return override.enabled;
+    // Default: enabled unless section explicitly marks optional + enabledByDefault = false
+    return s.enabledByDefault !== false;
   }
 
-  function updateFieldValue(sectionType: string, fieldKey: string, value: unknown) {
+  // Content is stored/read by section.key so ceremony ≠ reception
+  function updateFieldValue(sectionKey: string, fieldKey: string, value: unknown) {
     setContent((prev) => {
-      const sectionContent = ((prev[sectionType] ?? {}) as Record<string, unknown>);
-      return { ...prev, [sectionType]: { ...sectionContent, [fieldKey]: value } };
+      const sectionContent = ((prev[sectionKey] ?? {}) as Record<string, unknown>);
+      return { ...prev, [sectionKey]: { ...sectionContent, [fieldKey]: value } };
     });
     setDirty(true);
     scheduleAutosave();
   }
 
-  function getFieldValue(sectionType: string, fieldKey: string): unknown {
-    return ((content[sectionType] ?? {}) as Record<string, unknown>)[fieldKey];
+  function getFieldValue(sectionKey: string, fieldKey: string): unknown {
+    return ((content[sectionKey] ?? {}) as Record<string, unknown>)[fieldKey];
   }
 
-  function toggleSection(type: string) {
-    const section = sections.find((s) => s.type === type);
-    if (!section || !section.optional) return;
-    const current = getSectionEnabled(type);
+  function toggleSection(s: SectionDef) {
+    if (!s.optional) return;
+    const current = getSectionEnabled(s);
     setSectionOverrides((prev) => {
-      const rest = prev.filter((o) => o.type !== type);
-      return [...rest, { type: type as SectionType, enabled: !current, order: section.enabledByDefault ? 0 : 99 }];
+      const rest = prev.filter((o) => o.type !== (s.key as SectionType));
+      return [...rest, { type: s.key as SectionType, enabled: !current, order: 0 }];
     });
     setDirty(true);
     scheduleAutosave();
@@ -118,16 +125,9 @@ export function InviteEditor({
   const autosave = useCallback(() => {
     startTransition(async () => {
       try {
-        await saveInviteAction({
-          inviteId,
-          content,
-          sectionOverrides,
-          eventDate: eventDate || undefined,
-        });
+        await saveInviteAction({ inviteId, content, sectionOverrides, eventDate: eventDate || undefined });
         setDirty(false);
-      } catch {
-        // silent autosave failure; manual save still works
-      }
+      } catch { /* silent */ }
     });
   }, [inviteId, content, sectionOverrides, eventDate]);
 
@@ -155,8 +155,8 @@ export function InviteEditor({
         router.refresh();
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "";
-        if (msg === "SLUG_TAKEN") toast.error("That URL is already taken");
-        else if (msg === "SLUG_RESERVED") toast.error("That URL is reserved");
+        if (msg === "SLUG_TAKEN")          toast.error("That URL is already taken");
+        else if (msg === "SLUG_RESERVED")  toast.error("That URL is reserved");
         else if (msg?.startsWith("VALIDATION:")) toast.error("Fill in required fields first");
         else toast.error("Could not publish");
       }
@@ -177,14 +177,13 @@ export function InviteEditor({
     });
   }
 
-  // Warn unsaved on nav
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => { if (dirty) e.preventDefault(); };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty]);
 
-  const activeSectionDef = sections.find((s) => s.type === activeSection);
+  const activeSectionDef = sections.find((s) => s.key === activeSection);
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -196,14 +195,12 @@ export function InviteEditor({
           </Button>
           <Separator orientation="vertical" className="h-5" />
           <div>
-            <p className="text-sm font-medium text-foreground leading-none">{templateName}</p>
+            <p className="text-sm font-medium leading-none">{templateName}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {status === "published" ? (
-                <span className="text-green-600 font-medium">Published</span>
-              ) : (
-                <span className="capitalize">{status}</span>
-              )}
-              {dirty && " · Unsaved changes"}
+              {status === "published"
+                ? <span className="text-green-600 font-medium">Published</span>
+                : <span className="capitalize">{status}</span>}
+              {dirty && " · Unsaved"}
             </p>
           </div>
         </div>
@@ -234,28 +231,26 @@ export function InviteEditor({
             </p>
             <nav className="space-y-0.5">
               {sections.map((section) => {
-                const enabled = getSectionEnabled(section.type);
-                const active = activeSection === section.type;
+                const enabled = getSectionEnabled(section);
+                const active = activeSection === section.key;
                 return (
+                  // ✅ Use section.key — unique even when type repeats
                   <button
-                    key={section.type}
-                    onClick={() => setActiveSection(section.type)}
+                    key={section.key}
+                    onClick={() => setActiveSection(section.key)}
                     className={cn(
                       "w-full text-left flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors",
-                      active
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-foreground hover:bg-muted",
+                      active ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-muted",
                       !enabled && "opacity-40",
                     )}
                   >
-                    <span className="truncate">{SECTION_LABELS[section.type as SectionType] ?? section.type}</span>
+                    <span className="truncate">{sectionLabel(section)}</span>
                     {active && <ChevronRight className="h-3 w-3 shrink-0" />}
                   </button>
                 );
               })}
             </nav>
 
-            {/* Event date in sidebar */}
             <Separator className="my-3" />
             <div className="px-1 space-y-1.5">
               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -277,35 +272,36 @@ export function InviteEditor({
             <div className="max-w-2xl mx-auto p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-lg font-semibold">
-                    {SECTION_LABELS[activeSectionDef.type as SectionType] ?? activeSectionDef.type}
-                  </h2>
+                  <h2 className="text-lg font-semibold">{sectionLabel(activeSectionDef)}</h2>
                   {activeSectionDef.optional && (
                     <p className="text-xs text-muted-foreground mt-0.5">Optional section</p>
                   )}
                 </div>
                 {activeSectionDef.optional && (
                   <div className="flex items-center gap-2">
-                    <Label htmlFor={`toggle-${activeSectionDef.type}`} className="text-sm">
-                      {getSectionEnabled(activeSectionDef.type) ? "Enabled" : "Disabled"}
+                    <Label htmlFor={`toggle-${activeSectionDef.key}`} className="text-sm">
+                      {getSectionEnabled(activeSectionDef) ? "Enabled" : "Disabled"}
                     </Label>
                     <Switch
-                      id={`toggle-${activeSectionDef.type}`}
-                      checked={getSectionEnabled(activeSectionDef.type)}
-                      onCheckedChange={() => toggleSection(activeSectionDef.type)}
+                      id={`toggle-${activeSectionDef.key}`}
+                      checked={getSectionEnabled(activeSectionDef)}
+                      onCheckedChange={() => toggleSection(activeSectionDef)}
                     />
                   </div>
                 )}
               </div>
 
-              {!getSectionEnabled(activeSectionDef.type) ? (
-                <div className="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground text-sm">
+              {!getSectionEnabled(activeSectionDef) ? (
+                <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground text-sm">
                   This section is disabled. Toggle it on to edit.
                 </div>
               ) : activeSectionDef.repeatable ? (
                 <p className="text-sm text-muted-foreground bg-muted rounded-lg p-4">
-                  Repeatable sections (like multiple events, timeline entries) can be managed
-                  after publishing. Full editing coming in the next phase.
+                  Repeatable sections can be managed after publishing. Full editing coming soon.
+                </p>
+              ) : activeSectionDef.fields.length === 0 ? (
+                <p className="text-sm text-muted-foreground bg-muted rounded-lg p-4">
+                  No editable fields in this section.
                 </p>
               ) : (
                 <div className="space-y-5">
@@ -313,12 +309,19 @@ export function InviteEditor({
                     <FieldEditor
                       key={field.key}
                       field={field}
-                      value={getFieldValue(activeSectionDef.type, field.key)}
-                      onChange={(v) => updateFieldValue(activeSectionDef.type, field.key, v)}
+                      // ✅ Index content by section.key, not section.type
+                      value={getFieldValue(activeSectionDef.key, field.key)}
+                      onChange={(v) => updateFieldValue(activeSectionDef.key, field.key, v)}
                     />
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {!activeSectionDef && sections.length > 0 && (
+            <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
+              Select a section from the left panel.
             </div>
           )}
         </main>
@@ -335,13 +338,12 @@ export function InviteEditor({
 
           <div className="space-y-4 py-2">
             <SlugPicker value={slug} onChange={setSlug} />
-
             <div className="rounded-md bg-muted p-3 text-sm text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">Before you publish</p>
               <ul className="list-disc list-inside space-y-0.5 text-xs">
                 <li>Make sure all required fields are filled in</li>
                 <li>The invite URL cannot be changed after publishing</li>
-                <li>Guests will be able to see this invite immediately</li>
+                <li>Guests can see this invite immediately</li>
               </ul>
             </div>
           </div>

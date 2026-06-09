@@ -53,7 +53,8 @@ function section(
   fields: FieldDef[],
   opts: Partial<Omit<SectionDef, "type" | "fields">> = {},
 ): SectionDef {
-  return { type, enabledByDefault: true, optional: false, fields, ...opts };
+  // key defaults to type so every section has a unique-within-template identifier
+  return { type, key: type, enabledByDefault: true, optional: false, fields, ...opts };
 }
 
 export const heroSection = (): SectionDef =>

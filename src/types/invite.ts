@@ -43,8 +43,15 @@ export interface FieldDef {
 
 export interface SectionDef {
   type: SectionType;
-  enabledByDefault: boolean;
-  optional: boolean;
+  /** Unique key within a template — use this as React key and content key.
+   *  Sections like ceremony/reception share type "event_details" but differ by key. */
+  key: string;
+  /** Human-readable label stored alongside the section in the DB */
+  label?: string;
+  /** Defaults to true when undefined (sections are enabled unless overridden) */
+  enabledByDefault?: boolean;
+  /** Defaults to false when undefined */
+  optional?: boolean;
   fields: FieldDef[];
   repeatable?: boolean;
   maxItems?: number;

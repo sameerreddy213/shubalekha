@@ -97,7 +97,7 @@ export async function createInvite({ templateId, variantKey = "default", ownerId
   const count = await Invite.countDocuments({ ownerId: new Types.ObjectId(ownerId), deletedAt: null });
   if (count >= 50) throw new Error("LIMIT_REACHED");
 
-  const sections = template.sections as import("@/types/invite").SectionDef[];
+  const sections = template.sections as unknown as import("@/types/invite").SectionDef[];
   const content = seedContentFromTemplate(sections);
 
   const invite = await Invite.create({
@@ -131,7 +131,7 @@ export async function saveInvite(input: SaveInviteInput) {
     // Sanitize: only keep known section keys from the template schema
     const template = await Template.findById(invite.templateId).lean() as TemplateDoc | null;
     if (template) {
-      const sections = template.sections as import("@/types/invite").SectionDef[];
+      const sections = template.sections as unknown as import("@/types/invite").SectionDef[];
       invite.content = sanitizeContent(input.content, sections);
     } else {
       invite.content = input.content;
