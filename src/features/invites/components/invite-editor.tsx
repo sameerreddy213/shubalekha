@@ -13,8 +13,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { FieldEditor } from "./field-editor";
 import { SlugPicker } from "./slug-picker";
+import { InvitePreview } from "./invite-preview";
 import { saveInviteAction, publishInviteAction, unpublishInviteAction } from "../actions";
-import type { SectionDef, InviteContent, SectionOverride, SectionType } from "@/types/invite";
+import type { SectionDef, InviteContent, SectionOverride, SectionType, ThemePalette } from "@/types/invite";
 import { cn } from "@/lib/utils/cn";
 
 interface InviteEditorProps {
@@ -26,6 +27,7 @@ interface InviteEditorProps {
   initialStatus: string;
   sections: SectionDef[];
   templateName: string;
+  palette: ThemePalette;
 }
 
 // Label shown in the sidebar — prefer the section's own label field,
@@ -68,6 +70,7 @@ export function InviteEditor({
   initialStatus,
   sections,
   templateName,
+  palette,
 }: InviteEditorProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -224,7 +227,7 @@ export function InviteEditor({
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar — section nav */}
-        <aside className="w-56 shrink-0 border-r border-border overflow-y-auto">
+        <aside className="w-52 shrink-0 border-r border-border overflow-y-auto">
           <div className="p-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
               Sections
@@ -267,7 +270,7 @@ export function InviteEditor({
         </aside>
 
         {/* Main editor panel */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="w-[420px] shrink-0 overflow-y-auto border-r border-border">
           {activeSectionDef && (
             <div className="max-w-2xl mx-auto p-6">
               <div className="flex items-center justify-between mb-6">
@@ -325,6 +328,16 @@ export function InviteEditor({
             </div>
           )}
         </main>
+
+        {/* Live preview panel */}
+        <div className="flex-1 overflow-hidden border-l border-border hidden lg:block">
+          <InvitePreview
+            sections={sections}
+            content={content}
+            palette={palette}
+            templateName={templateName}
+          />
+        </div>
       </div>
 
       {/* Publish dialog */}

@@ -37,31 +37,31 @@ function fonts(display: string, body: string, script?: string) {
 // ── Section schemas (self-contained, no imports) ──────────────────────────
 function weddingSections() {
   return [
-    { type: "hero",         key: "hero",         label: "Hero",          fields: [
-      { key: "brideName",   type: "text",        label: "Bride name",    required: true  },
-      { key: "groomName",   type: "text",        label: "Groom name",    required: true  },
-      { key: "tagline",     type: "text",        label: "Tagline",       required: false },
-      { key: "heroImage",   type: "image",       label: "Hero photo",    required: false },
+    { type: "hero", key: "hero", label: "Hero", enabledByDefault: true, optional: false, fields: [
+      { key: "brideName",  type: "text",     label: "Bride name",      required: true  },
+      { key: "groomName",  type: "text",     label: "Groom name",      required: true  },
+      { key: "tagline",    type: "text",     label: "Tagline",         required: false },
+      { key: "heroImage",  type: "image",    label: "Hero / Cover photo", required: false },
     ]},
-    { type: "event_details", key: "ceremony", label: "Ceremony details", fields: [
-      { key: "date",        type: "date",        label: "Date",          required: true  },
-      { key: "time",        type: "text",        label: "Time",          required: true  },
-      { key: "venue",       type: "text",        label: "Venue name",    required: true  },
-      { key: "address",     type: "longtext",    label: "Address",       required: true  },
-      { key: "mapsUrl",     type: "url",         label: "Google Maps URL", required: false },
+    { type: "event_details", key: "ceremony", label: "Ceremony details", enabledByDefault: true, optional: false, fields: [
+      { key: "date",    type: "date",     label: "Date",          required: true  },
+      { key: "time",    type: "time",     label: "Time",          required: true  },
+      { key: "venue",   type: "text",     label: "Venue name",    required: true  },
+      { key: "address", type: "longtext", label: "Address",       required: true  },
+      { key: "mapsUrl", type: "url",      label: "Google Maps URL", required: false },
     ]},
-    { type: "event_details", key: "reception", label: "Reception details", fields: [
-      { key: "date",        type: "date",        label: "Date",          required: false },
-      { key: "time",        type: "text",        label: "Time",          required: false },
-      { key: "venue",       type: "text",        label: "Venue name",    required: false },
-      { key: "address",     type: "longtext",    label: "Address",       required: false },
+    { type: "event_details", key: "reception", label: "Reception details", enabledByDefault: false, optional: true, fields: [
+      { key: "date",    type: "date",     label: "Date",          required: false },
+      { key: "time",    type: "time",     label: "Time",          required: false },
+      { key: "venue",   type: "text",     label: "Venue name",    required: false },
+      { key: "address", type: "longtext", label: "Address",       required: false },
     ]},
-    { type: "rsvp",         key: "rsvp",         label: "RSVP",          fields: [
-      { key: "deadline",    type: "date",        label: "RSVP deadline", required: false },
-      { key: "message",     type: "longtext",    label: "Custom message",required: false },
+    { type: "rsvp", key: "rsvp", label: "RSVP", enabledByDefault: true, optional: true, fields: [
+      { key: "deadline", type: "date",     label: "RSVP deadline", required: false },
+      { key: "message",  type: "longtext", label: "Custom message",required: false },
     ]},
-    { type: "gallery",      key: "gallery",      label: "Photo gallery", fields: [
-      { key: "images",      type: "image",       label: "Photos",        required: false },
+    { type: "gallery", key: "gallery", label: "Photo gallery", enabledByDefault: false, optional: true, fields: [
+      { key: "images", type: "image", label: "Photos", required: false },
     ]},
   ];
 }
@@ -96,7 +96,7 @@ function birthdaySections() {
     ]},
     { type: "event_details", key: "party", label: "Party details", fields: [
       { key: "date",    type: "date",     label: "Date",    required: true  },
-      { key: "time",    type: "text",     label: "Time",    required: true  },
+      { key: "time",    type: "time",     label: "Time",    required: true  },
       { key: "venue",   type: "text",     label: "Venue",   required: true  },
       { key: "address", type: "longtext", label: "Address", required: true  },
     ]},
@@ -130,7 +130,7 @@ function corporateSections() {
     ]},
     { type: "event_details", key: "event", label: "Event details", fields: [
       { key: "date",    type: "date",     label: "Date",    required: true  },
-      { key: "time",    type: "text",     label: "Time",    required: true  },
+      { key: "time",    type: "time",     label: "Time",    required: true  },
       { key: "venue",   type: "text",     label: "Venue",   required: true  },
       { key: "address", type: "longtext", label: "Address", required: true  },
       { key: "agenda",  type: "longtext", label: "Agenda",  required: false },

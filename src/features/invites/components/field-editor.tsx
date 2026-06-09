@@ -1,4 +1,5 @@
 "use client";
+import { TimePicker } from "./time-picker";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -66,12 +67,10 @@ export function FieldEditor({ field, value, onChange, error }: FieldEditorProps)
       )}
 
       {field.type === "time" && (
-        <Input
+        <TimePicker
           id={id}
-          type="time"
           value={strVal}
-          onChange={(e) => onChange(e.target.value)}
-          className={cn(error && "border-destructive")}
+          onChange={onChange}
         />
       )}
 

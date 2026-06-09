@@ -192,16 +192,26 @@ export function TemplateCard({ template, index }: TemplateCardProps) {
               </div>
             )}
 
-            {/* CTA */}
-            <div className="mt-4">
+            {/* CTAs */}
+            <div className="mt-4 flex gap-2">
+              <a
+                href={`/templates/${template.slug}/preview`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex-1 rounded-lg border border-border bg-background
+                           py-2 text-center text-xs font-medium text-muted-foreground
+                           transition-colors duration-150
+                           hover:border-border hover:bg-muted"
+              >
+                Preview
+              </a>
               <span
-                className="block w-full rounded-lg border border-border bg-background
+                className="flex-[2] rounded-lg border border-border bg-background
                            py-2 text-center text-xs font-medium text-foreground
                            transition-colors duration-150
                            group-hover:border-primary group-hover:bg-primary
                            group-hover:text-primary-foreground"
               >
-                Use this template
+                Use template
               </span>
             </div>
           </div>

@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/auth/guards";
 import { getInviteById } from "@/features/invites/services";
 import { InviteEditor } from "@/features/invites/components/invite-editor";
 import type { TemplateDoc, InviteDoc } from "@/models";
-import type { SectionDef, SectionOverride } from "@/types/invite";
+import type { SectionDef, SectionOverride, ThemePalette } from "@/types/invite";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +26,23 @@ export default async function EditInvitePage({ params }: { params: Promise<{ id:
   const template = inv.templateId as (TemplateDoc & { sections: SectionDef[] }) | null;
   if (!template) notFound();
 
+  // Resolve the default variant's palette for the live preview
+  const variants = (template.variants ?? []) as Array<{
+    key: string;
+    theme?: { palette?: Partial<ThemePalette> };
+  }>;
+  const defaultVariant =
+    variants.find((v) => v.key === template.defaultVariantKey) ?? variants.at(0);
+  const rawPalette = defaultVariant?.theme?.palette;
+  const palette: ThemePalette = {
+    bg:      rawPalette?.bg      ?? "#ffffff",
+    surface: rawPalette?.surface ?? "#f5f5f5",
+    primary: rawPalette?.primary ?? "#1a1a1a",
+    accent:  rawPalette?.accent  ?? "#e07b00",
+    text:    rawPalette?.text    ?? "#0a0a0a",
+    muted:   rawPalette?.muted   ?? "#888888",
+  };
+
   return (
     <InviteEditor
       inviteId={id}
@@ -36,6 +53,7 @@ export default async function EditInvitePage({ params }: { params: Promise<{ id:
       initialStatus={inv.status as string}
       sections={template.sections ?? []}
       templateName={template.name}
+      palette={palette}
     />
   );
 }
